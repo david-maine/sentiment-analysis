@@ -18,7 +18,7 @@ torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
 TEXT = data.Field(tokenize = 'spacy')
-LABEL = data.LabelField(dtype = torch.FloatType)
+LABEL = data.LabelField(dtype = torch.float)
 
 #%%
 train_data, test_data = datasets.IMDB.splits(TEXT, LABEL)
@@ -37,11 +37,13 @@ torch.cuda.is_available()
 
 BATCH_SIZE = 64
 
-device = torch.device('cuda')
+# device = torch.device('cuda')
+device = torch.device('cpu')
+
 
 #%%
 train_iter, valid_iter, test_iter = data.BucketIterator.splits(
-    (train, validate, test),
+    (train_data, validate_data, test_data),
     batch_size = BATCH_SIZE,
     device = device
 )
@@ -153,7 +155,7 @@ def epoch_time(start_time, end_time):
 
 #%% run the training
 N_EPOCHS = 5
-LABEL.build_vocab(train,)
+# LABEL.build_vocab(train,)
 
 best_valid_loss = float('inf')
 
