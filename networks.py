@@ -41,7 +41,7 @@ class LSTMRNN(nn.Module):
         embedded = self.dropout(self.embedding(text))
         
         #pack sequence
-        packed_embedded = nn.utils.rnn.pack_padded_sequence(embedded, text_lengths)
+        packed_embedded = nn.utils.rnn.pack_padded_sequence(embedded, text_lengths, enforce_sorted=False)
         packed_output, (hidden, cell) = self.rnn(packed_embedded)
         
         #unpack sequence
