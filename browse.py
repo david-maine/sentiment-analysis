@@ -10,6 +10,8 @@ from selenium.webdriver.support import expected_conditions as EC
 import json
 import pandas as pd
 
+import re
+
 
 # get the codes we want to search
 asx200_df = pd.read_csv(
@@ -71,24 +73,26 @@ for i, row in asx200_df.iterrows():
 
     reviews = []
     for j, href in enumerate(hrefs):
+        # get the date from the href
+        date = re.search('[0-9]{8}', href).group(0)
         review = {}
-        review[str(i)] = []
+        review[date] = []
         paragraphs = download_report(driver, href)
         for p in paragraphs:
-            review[str(i)].append(p)
+            review[date].append(p)
         reviews.append(review)
 
-        if j > 10:
-            break
+        # if j > 1:
+        #     break
 
-    if i > 3:
-        break
+    # if i > 1:
+    #     break
 
     company[code]['reviews'] = reviews
 
     data["companies"].append(company) 
 
-with open('data.txt', 'w') as outfile:  
-    json.dump(data, outfile)
+with open('data.json', 'w') as outfile:  
+    json.dump(data, outfile, indent=4)
 
 
