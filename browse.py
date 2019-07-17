@@ -7,6 +7,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+import json
+import pandas as pd
+
+
+# get the codes we want to search
+asx200_df = pd.read_csv(
+    "~/projects/personal/data/stock/20190701-asx200.csv",
+    skiprows=1
+    )
+
+
 driver = webdriver.Chrome()
 
 driver.get("https://www.morningstar.com.au/Security/Login")
@@ -39,14 +50,45 @@ def download_report(driver, href):
         "//div[@id = 'AnalystNote']//p[@class = 'commenttext']"
     )
 
+    paragraphs = list()
     for p in text:
-        paragraph = p.text
-        print(paragraph)
+        paragraphs.append(p.text)
+    
+    return paragraphs
 
 
 
-hrefs = download_reports(driver, 'ABP')
+# downlaod all the reports
+data = {}
+data["companies"] = []
+for i, row in asx200_df.iterrows():
+    code = row['Code']
 
-for href in hrefs:
-    download_report(driver, href)
+    hrefs = download_reports(driver, code)
+    
+    company = {}
+    company[code] = {}
+
+    reviews = []
+    for j, href in enumerate(hrefs):
+        review = {}
+        review[str(i)] = []
+        paragraphs = download_report(driver, href)
+        for p in paragraphs:
+            review[str(i)].append(p)
+        reviews.append(review)
+
+        if j > 10:
+            break
+
+    if i > 3:
+        break
+
+    company[code]['reviews'] = reviews
+
+    data["companies"].append(company) 
+
+with open('data.txt', 'w') as outfile:  
+    json.dump(data, outfile)
+
 
