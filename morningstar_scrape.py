@@ -15,19 +15,39 @@ asx_df = pd.read_csv(
 
 #%% try research archives
 # saved the logged in session
-session = requests.Session()
+def create_session():
+    session = requests.Session()
 
-session.post('https://www.morningstar.com.au/Security/Login', data = dict(
-    UserName = login['username'],
-    Password = login['password']
-))
+    session.post('https://www.morningstar.com.au/Security/Login', data = dict(
+        UserName = login['username'],
+        Password = login['password']
+    ))
 
-# iterate through all listed ASX
+    return session
+
+#%% iterate through all listed ASX
+session = create_session()
 reports = {}
+
 for i, row in asx_df.iterrows():
     code = row['ASX code']
     print('trying ' + code)
-    page = session.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
+    # max sure we dont get redirected to
+    try:
+        page = session.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
+        assert(page.status_code == 200)
+    except:
+        # reset the session
+        session = create_session
+    finally:
+        # try again
+        try:
+            page = session.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
+            assert(page.status_code == 200)
+        except:
+            print('failed to reopen the session')
+            break
+
     soup = bs(page.text, "html.parser")
 
     # check if we have the reports table with links in it
@@ -47,10 +67,17 @@ for i, row in asx_df.iterrows():
                 href = link['href']
                 hrefs.append(href)
             reports[code] = hrefs
+
+#%% save those report links
+with open('reports.json', 'w') as outfile:  
+    json.dump(reports, outfile, indent=4)
             
 
 #%% Get the analyst reports from the links
-
+for stock in reports:
+    if reports[stock] == 'No data' or reports[stock] == 'no archived reports':
+        pass
+    else 
 
 #%%
 def download_reports(driver, code):
