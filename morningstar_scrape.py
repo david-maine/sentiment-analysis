@@ -13,10 +13,8 @@ asx_df = pd.read_csv(
     skiprows=2
     )
 
-
 #%% try research archives
-# page = session.get('https://www.morningstar.com.au/Stocks/Archive/')
-# soup = bs(page.text, "html.parser")
+# saved the logged in session
 session = requests.Session()
 
 session.post('https://www.morningstar.com.au/Security/Login', data = dict(
@@ -24,6 +22,7 @@ session.post('https://www.morningstar.com.au/Security/Login', data = dict(
     Password = login['password']
 ))
 
+# iterate through all listed ASX
 reports = {}
 for i, row in asx_df.iterrows():
     code = row['ASX code']
@@ -31,7 +30,7 @@ for i, row in asx_df.iterrows():
     page = session.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
     soup = bs(page.text, "html.parser")
 
-    # print(soup)
+    # check if we have the reports table with links in it
     table = soup.find('table', class_ = 'table1 rarchivetable')
     if table == None:
         print("no table found")
@@ -41,6 +40,7 @@ for i, row in asx_df.iterrows():
         if not links:
             print('no archived reports')
             reports[code] = 'No reports'
+        # save all the links in the dictionary
         else:
             hrefs = list()
             for link in links:
@@ -49,22 +49,10 @@ for i, row in asx_df.iterrows():
             reports[code] = hrefs
             
 
-    # if i >= 0:
-    #     break
+#%% Get the analyst reports from the links
 
 
 #%%
-
-
-
-driver = webdriver.Chrome()
-
-driver.get("https://www.morningstar.com.au/Security/Login")
-
-# login
-
-driver.find_element_by_id("loginFormNew").submit()
-
 def download_reports(driver, code):
     driver.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
 
