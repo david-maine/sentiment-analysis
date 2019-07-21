@@ -178,6 +178,42 @@ def get_analyst_valuation(div):
     return analyst_valuation
 
 
+#%% [markdown]
+# Now we want to get all the scrpaed componets into one dictionary
+
+#%%
+def get_research_report(page):
+    '''
+    Given a page object construct the research report in a dictionary format
+
+    Structure of the returned dictionary
+    {
+        "date" : <research date>,
+        "note" : <note dictionary>,
+        "report" : <report dictionary,
+        "valuation : <valuation dictionary,
+        (TO DO - expand)
+    }
+    '''
+    research = {}
+    soup = bs(page.text, "html.parser")
+
+    date = re.search('[0-9]{8}', page.url).group(0)
+    research['date'] = date
+                
+    note_div = soup.find('div', id = 'AnalystNote')
+    note = get_analyst_note(note_div)
+    research['note'] = note
+
+    report_div = soup.find('div', id = '')
+    report = get_analyst_report(report_div)
+    research['report'] = report
+
+    valuation_div = soup.find('div', id = '')
+    valuation = get_analyst_report(valuation_div)
+    research['report'] = valuation
+
+    return research
 
 #%% Analyst report
 session = create_session()
@@ -194,6 +230,5 @@ for stock in reports:
             page = get_page(session, 'https://www.morningstar.com.au' + link)
             soup = bs(page.text, "html.parser")
                         
-            analyst_note_div = soup.find('div', id = 'AnalystNote')
-            analyst_note = get_analyst_note(analyst_note_div)
+            res
 #%%
