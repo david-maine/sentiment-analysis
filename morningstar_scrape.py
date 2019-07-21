@@ -131,6 +131,51 @@ def get_analyst_note(div):
         notes.append(paragraph.get_text())
     analyst_note['notes'] = notes
 
+    return analyst_note
+
+#%% [markdown]
+# The analyst report
+
+#%%
+def get_analyst_report(div):
+    '''
+    Given the analyst report div return the relevant components in a dictionary
+
+    Structure of the returned dictionary
+    {
+        <subsection> : [<note>, <note>, ...],
+        <subsection> : [<note>, <note>, ...],
+        ...
+    }
+    '''
+    # define the dictionary
+    analyst_report = {}
+
+    # TO DO
+
+    return analyst_report
+
+#%% [markdown]
+# The analyst valuation
+
+#%%
+def get_analyst_valuation(div):
+    '''
+    Given the analyst valuation div return the relevant components in a dictionary
+
+    Structure of the returned dictionary
+    {
+        <subsection> : [<note>, <note>, ...],
+        <subsection> : [<note>, <note>, ...],
+        ...
+    }
+    '''
+    # define the dictionary
+    analyst_valuation = {}
+
+    # TO DO
+
+    return analyst_valuation
 
 
 
@@ -149,7 +194,6 @@ for stock in reports:
             page = get_page(session, 'https://www.morningstar.com.au' + link)
             soup = bs(page.text, "html.parser")
                         
-            # get the analyst notes
-            note = {}
-            analyst_note = soup.find('div', id = 'AnalystNote')
+            analyst_note_div = soup.find('div', id = 'AnalystNote')
+            analyst_note = get_analyst_note(analyst_note_div)
 #%%
