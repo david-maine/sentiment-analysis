@@ -105,19 +105,34 @@ def get_page(session, url):
 # Define the logic to pull out the Analyst Note components
 
 #%%
-def get_analyst_note():
+def get_analyst_note(div):
     '''
     Given the analyst note div return the relevant components in a dictionary
+
+    Structure of the returned dictionary
+    {
+        "title" : <title>,
+        "author" : <author>,
+        "notes" : [<note>, <note>, ...]
+    }
     '''
-    note = {}
-    analyst_note = soup.find('div', id = 'AnalystNote')
-    title = analyst_note.find('span', class_ = 'stockreportsubheader bold borderbtmD4').get_text()
-    note['title'] = title
-    comments = analyst_note.find_all('p', class_ = 'commenttext')
+    # define the dictionary
+    analyst_note = {}
+    # pull out the title
+    title = div.find('span', class_ = 'stockreportsubheader bold borderbtmD4').get_text()
+    analyst_note['title'] = title
+
+    # pull out the author - TO DO: no unique id or class on span element
+
+    # pull out the comment blocks
+    paragraphs = div.find_all('p', class_ = 'commenttext')
     notes = list()
-    for comment in comments:
-        notes.append(comment.get_text())
-    note['notes'] = notes
+    for paragraph in paragraphs:
+        notes.append(paragraph.get_text())
+    analyst_note['notes'] = notes
+
+
+
 
 #%% Analyst report
 session = create_session()
@@ -137,12 +152,4 @@ for stock in reports:
             # get the analyst notes
             note = {}
             analyst_note = soup.find('div', id = 'AnalystNote')
-            title = analyst_note.find('span', class_ = 'stockreportsubheader bold borderbtmD4').get_text()
-            note['title'] = title
-            comments = analyst_note.find_all('p', class_ = 'commenttext')
-            notes = list()
-            for comment in comments:
-                notes.append(comment.get_text())
-            note['notes'] = notes
-
 #%%
