@@ -30,53 +30,57 @@ def create_session():
     return session
 
 #%% iterate through all listed ASX
-session = create_session()
-reports = {}
+# session = create_session()
+# reports = {}
 
-for i, row in asx_df.iterrows():
-    code = row['ASX code']
-    print('trying ' + code)
-    # max sure we dont get redirected to
-    try:
-        page = session.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
-        assert(page.status_code == 200)
-    except:
-        # reset the session
-        session = create_session()
-    finally:
-        # try again
-        try:
-            page = session.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
-            assert(page.status_code == 200)
-        except:
-            print('failed to reopen the session with return code ' + page.status_code)
-            raise
+# for i, row in asx_df.iterrows():
+#     code = row['ASX code']
+#     print('trying ' + code)
+#     # max sure we dont get redirected to
+#     try:
+#         page = session.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
+#         assert(page.status_code == 200)
+#     except:
+#         # reset the session
+#         session = create_session()
+#     finally:
+#         # try again
+#         try:
+#             page = session.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
+#             assert(page.status_code == 200)
+#         except:
+#             print('failed to reopen the session with return code ' + page.status_code)
+#             raise
 
-    soup = bs(page.text, "html.parser")
+#     soup = bs(page.text, "html.parser")
 
-    # check if we have the reports table with links in it
-    table = soup.find('table', class_ = 'table1 rarchivetable')
-    if table == None:
-        print("no table found")
-        reports[code] = 'No data'
-    else:
-        links = table.find_all('a', class_ = 'plainlink')
-        if not links:
-            print('no archived reports')
-            reports[code] = 'No reports'
-        # save all the links in the dictionary
-        else:
-            hrefs = list()
-            for link in links:
-                href = link['href']
-                hrefs.append(href)
-            reports[code] = hrefs
+#     # check if we have the reports table with links in it
+#     table = soup.find('table', class_ = 'table1 rarchivetable')
+#     if table == None:
+#         print("no table found")
+#         reports[code] = 'No data'
+#     else:
+#         links = table.find_all('a', class_ = 'plainlink')
+#         if not links:
+#             print('no archived reports')
+#             reports[code] = 'No reports'
+#         # save all the links in the dictionary
+#         else:
+#             hrefs = list()
+#             for link in links:
+#                 href = link['href']
+#                 hrefs.append(href)
+#             reports[code] = hrefs
 
-#%% save those report links
-# we now have a list of all current archived reports
-with open('reports.json', 'w') as outfile:  
-    json.dump(reports, outfile, indent=4)
-            
+#%% [markdown]
+# Code blocks to save and read the dictionay to and from json
+#%% 
+# with open('reports.json', 'w') as outfile:  
+#     json.dump(reports, outfile, indent=4)
+
+#%%
+with open('reports.json') as json_file:  
+    archived_reports = json.load(json_file)        
 
 #%% [markdown]
 ## Report Components
@@ -198,6 +202,7 @@ def get_research_report(page):
     research = {}
     soup = bs(page.text, "html.parser")
 
+    print(page.url)
     date = re.search('[0-9]{8}', page.url).group(0)
     research['date'] = date
                 
@@ -211,24 +216,27 @@ def get_research_report(page):
 
     valuation_div = soup.find('div', id = '')
     valuation = get_analyst_report(valuation_div)
-    research['report'] = valuation
+    research['valuation'] = valuation
 
     return research
 
-#%% Analyst report
+#%% Now scrape the reports
 session = create_session()
 i = 0
-notes = {}
-for stock in reports:
-    if reports[stock] == 'No data' or reports[stock] == 'No reports':
+data = {}
+for stock in archived_reports:
+    if archived_reports[stock] == 'No data' or archived_reports[stock] == 'No reports':
         pass
     else:
-        links = reports[stock]
+        links = archived_reports[stock]
         # visit every archived report
         reports = []
         for link in links:
             page = get_page(session, 'https://www.morningstar.com.au' + link)
-            soup = bs(page.text, "html.parser")
-                        
-            res
+            research = get_research_report(page)
+
+            reports.append(research)
+
+        data[stock] = reports 
+            
 #%%
