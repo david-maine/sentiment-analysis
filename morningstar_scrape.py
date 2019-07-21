@@ -1,3 +1,6 @@
+#%% [markdown]
+# # Scrape Morningstar Report Data
+
 #%%
 import requests
 from bs4 import BeautifulSoup as bs
@@ -18,6 +21,7 @@ asx_df = pd.read_csv(
 def create_session():
     session = requests.Session()
 
+    # import credentials from credentials.py under gitignore
     session.post('https://www.morningstar.com.au/Security/Login', data = dict(
         UserName = login['username'],
         Password = login['password']
@@ -38,15 +42,15 @@ for i, row in asx_df.iterrows():
         assert(page.status_code == 200)
     except:
         # reset the session
-        session = create_session
+        session = create_session()
     finally:
         # try again
         try:
             page = session.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
             assert(page.status_code == 200)
         except:
-            print('failed to reopen the session')
-            break
+            print('failed to reopen the session with return code ' + page.status_code)
+            raise
 
     soup = bs(page.text, "html.parser")
 
@@ -69,85 +73,76 @@ for i, row in asx_df.iterrows():
             reports[code] = hrefs
 
 #%% save those report links
+# we now have a list of all current archived reports
 with open('reports.json', 'w') as outfile:  
     json.dump(reports, outfile, indent=4)
             
 
-#%% Get the analyst reports from the links
-for stock in reports:
-    if reports[stock] == 'No data' or reports[stock] == 'no archived reports':
-        pass
-    else 
+#%% [markdown]
+## Report Components
+# We now need to extract our relevant coponents of the report page
+
+
+#%% try getting the web page helper function
+def get_page(session, url):
+    try:
+        page = session.get(url)
+        assert(page.status_code == 200)
+    except:
+        # reset the session
+        session = create_session()
+    finally:
+        # try again
+        try:
+            page = session.get(url)
+            assert(page.status_code == 200)
+        except:
+            # print('failed to reopen the session with return code ' + page.status_code)
+            raise
+        return page
+
+#%% [markdown]
+# Define the logic to pull out the Analyst Note components
 
 #%%
-def download_reports(driver, code):
-    driver.get('https://www.morningstar.com.au/Stocks/Archive/' + code)
+def get_analyst_note():
+    '''
+    Given the analyst note div return the relevant components in a dictionary
+    '''
+    note = {}
+    analyst_note = soup.find('div', id = 'AnalystNote')
+    title = analyst_note.find('span', class_ = 'stockreportsubheader bold borderbtmD4').get_text()
+    note['title'] = title
+    comments = analyst_note.find_all('p', class_ = 'commenttext')
+    notes = list()
+    for comment in comments:
+        notes.append(comment.get_text())
+    note['notes'] = notes
 
-    # get list of all hyperlinks
-    links = driver.find_elements_by_xpath(
-        "//table[@class = 'table1 rarchivetable']//a[@class = 'plainlink']"
-    )
-
-    hrefs = list()
-    # make a list of links:
-    for link in links:
-        href = link.get_attribute("href")
-        hrefs.append(href)
-        if hrefs == None:
-    
-    return(hrefs)
-
-def download_report(driver, href):
-    driver.get(href)
-
-    text = driver.find_elements_by_xpath(
-        "//div[@id = 'AnalystNote']//p[@class = 'commenttext']"
-    )
-
-    paragraphs = list()
-    for p in text:
-        paragraphs.append(p.text)
-    
-    return paragraphs
-
-
-
-# downlaod all the reports
-data = {}
-data["companies"] = []
-for i, row in asx_df.iterrows():
-    code = row['ASX code']
-
-    hrefs = download_reports(driver, code)
-    
-    company = {}
-    company[code] = {}
-
-    reviews = []
-    for j, href in enumerate(hrefs):
-        # get the date from the href
-        date = re.search('[0-9]{8}', href).group(0)
-        review = {}
-        review[date] = []
-        paragraphs = download_report(driver, href)
-        for p in paragraphs:
-            review[date].append(p)
-        reviews.append(review)
-
-        # if j > 1:
-        #     break
-
-    if i > 10:
-        break
-
-    company[code]['reviews'] = reviews
-
-    data["companies"].append(company) 
-
-with open('data.json', 'w') as outfile:  
-    json.dump(data, outfile, indent=4)
-
-
-
+#%% Analyst report
+session = create_session()
+i = 0
+notes = {}
+for stock in reports:
+    if reports[stock] == 'No data' or reports[stock] == 'No reports':
+        pass
+    else:
+        links = reports[stock]
+        # visit every archived report
+        reports = []
+        for link in links:
+            page = get_page(session, 'https://www.morningstar.com.au' + link)
+            soup = bs(page.text, "html.parser")
+                        
+            # get the analyst notes
+            note = {}
+            analyst_note = soup.find('div', id = 'AnalystNote')
+            title = analyst_note.find('span', class_ = 'stockreportsubheader bold borderbtmD4').get_text()
+            note['title'] = title
+            comments = analyst_note.find_all('p', class_ = 'commenttext')
+            notes = list()
+            for comment in comments:
+                notes.append(comment.get_text())
+            note['notes'] = notes
 
 #%%
