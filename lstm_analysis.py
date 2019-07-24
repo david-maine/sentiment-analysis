@@ -11,6 +11,8 @@ import torch.nn as nn
 
 import time
 
+import spacy
+
 
 # Data Preperation
 #%%
@@ -42,8 +44,8 @@ LABEL.build_vocab(train_data)
 
 #%% build the ierators
 BATCH_SIZE = 64
-# device = torch.device('cuda')
-device = torch.device('cpu')
+device = torch.device('cuda')
+# device = torch.device('cpu')
 
 train_iter, valid_iter, test_iter = data.BucketIterator.splits(
     (train_data, validate_data, test_data),
@@ -196,8 +198,35 @@ for epoch in range(N_EPOCHS):
 #%% test accuracy
 model.load_state_dict(torch.load('tut2-model.pt'))
 
-test_loss, test_acc = evaluate(model, test_iterator, criterion)
+test_loss, test_acc = evaluate(model, test_iter, criterion)
 
 print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc*100:.2f}%')
 
+
+#%% sentiment prediction
+nlp = spacy.load('en')
+
+def predict_sentiment(model, sentence):
+    model.eval()
+    tokenized = [tok.text for tok in nlp.tokenizer(sentence)]
+    indexed = [TEXT.vocab.stoi[t] for t in tokenized]
+    length = [len(indexed)]
+    tensor = torch.LongTensor(indexed).to(device)
+    tensor = tensor.unsqueeze(1)
+    length_tensor = torch.LongTensor(length)
+    prediction = torch.sigmoid(model(tensor, length_tensor))
+    return prediction.item()
+
+#%%
+predict_sentiment(model, 
+    '''
+    Amazing visuals, thrilling action scenes, engaging story-telling, superb casting.....These are the making of a summer blockbuster.
+
+"Spider-Man:Far from Home" is a perfect combination of comedy, action, and romance, with all the right ingredients and none of the genre tropes.
+
+Surprisingly enough, the centerpiece of this film is not the superhero's extraordinary world-saving, but the budding romance between the very ordinary human characters. It might be more accurate to describe this film as a genre fusion of romcom and action-comedy under the disguise of a superhero movie, since the scale of the "world-saving" and the stakes for the final showdown are very much limited compared to what just happened in Endgame.
+
+
+    '''
+)
 #%%
