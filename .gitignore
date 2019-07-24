@@ -3,5 +3,6 @@
 /.data/
 
 *.pt
+*.json
 
 credentials.py
