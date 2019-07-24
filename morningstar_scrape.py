@@ -240,3 +240,7 @@ for stock in archived_reports:
         data[stock] = reports 
             
 #%%
+with open('data.json', 'w') as outfile:  
+    json.dump(data, outfile, indent=4)
+
+#%%
