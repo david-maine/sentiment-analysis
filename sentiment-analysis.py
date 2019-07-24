@@ -37,8 +37,8 @@ torch.cuda.is_available()
 
 BATCH_SIZE = 64
 
-# device = torch.device('cuda')
-device = torch.device('cpu')
+device = torch.device('cuda')
+# device = torch.device('cpu')
 
 
 #%%
@@ -77,7 +77,7 @@ OUTPUT_DIM = 1
 model = Network(INPUT_DIM, EMBEDDING_DIM, HIDDEN_DIM, OUTPUT_DIM)
 
 
-#%% Train the model
+#%% 
 optimiser = optim.SGD(model.parameters(), lr = 1e-3)
 criterion = nn.BCEWithLogitsLoss()
 
