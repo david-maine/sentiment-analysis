@@ -2,15 +2,15 @@
 import pandas as pd
 import os
 
+from pymongo import MongoClient
+
 import numpy as np
 import matplotlib.pyplot as plt
-
 import seaborn as sns
 
-# from pandas.api.types import CategoricalDtype
-# from plotnine import *
-# from plotnine.data import mpg
-%matplotlib inline
+#%%
+client = MongoClient()
+db = client.stock
 
 #%% [markdown]
 # Inspect the data
@@ -52,21 +52,44 @@ data['datetime'] = pd.to_datetime(data['date'].astype(str), format='%Y%m%d')
 
 # data.append(temp)
 
+#%% write the data to mongo
+for i, row in data.iterrows():
+    price  = {
+        'stock' : row['stock'],
+        'date' : row['datetime'],
+        'open' : row['open'],
+        'high' : row['high'],
+        'low' : row['low'],
+        'close' : row['close'],
+        'volume' : row['volume'],
+    }
+
+    prices = db.prices
+    prices.insert_one(price)
+    # break
+
 #%% [markdown]
 
-# plot and inspect the data
-sns.set_style("whitegrid")
+#%% plot and inspect the data
+%matplotlib inline
+
+# query the data
+query = db.prices.find({"stock": { "$in": [ "ANZ", "BOQ", "CSL" ] }})
+data = pd.DataFrame(list(query))
+
+#%%
+sns.set_style("darkgrid")
 sns.relplot(
-    data = data[data.stock == 'BOQ'], 
-    x = "datetime", 
+    data = data, 
+    x = "date", 
     y = "close",
     kind = "line",
-    style = "stock"
+    hue = "stock"
 )
 
 
+#%% [markdown]
 
-
-#%%
+# going to want to squeeze increases/decreases into [0, 1] to code our NLP 
 
 #%%
