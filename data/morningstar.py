@@ -69,3 +69,78 @@ def find_archives(session, code):
                 hrefs.append(href)
     return hrefs
 
+def get_analyst_note(page_text):
+    '''
+    Given the analyst note div return the relevant components in a dictionary
+
+    Structure of the returned dictionary
+    {
+        "title" : <title>,
+        "author" : <author>,
+        "notes" : [<note>, <note>, ...]
+    }
+    '''
+    soup = bs(page_text, "html.parser")
+    
+    div = soup.find('div', id = 'AnalystNote')
+
+    # define the dictionary
+    analyst_note = {}
+    # pull out the title
+    title = div.find('span', class_ = 'stockreportsubheader bold borderbtmD4').get_text()
+    analyst_note['title'] = title
+
+    # pull out the author - TO DO: no unique id or class on span element
+
+    # pull out the comment blocks
+    paragraphs = div.find_all('p', class_ = 'commenttext')
+    notes = list()
+    for paragraph in paragraphs:
+        # remove whitespace 
+        split = paragraph.get_text().split()
+        string = ' '.join(split)
+        # append if string not empty
+        if string:
+            notes.append(string)
+    
+    analyst_note['notes'] = notes
+
+    return analyst_note
+
+
+def get_analyst_report(div):
+    '''
+    Given the analyst report div return the relevant components in a dictionary
+
+    Structure of the returned dictionary
+    {
+        <subsection> : [<note>, <note>, ...],
+        <subsection> : [<note>, <note>, ...],
+        ...
+    }
+    '''
+    # define the dictionary
+    analyst_report = {}
+
+    # TO DO
+
+    return analyst_report
+
+
+def get_analyst_valuation(div):
+    '''
+    Given the analyst valuation div return the relevant components in a dictionary
+
+    Structure of the returned dictionary
+    {
+        <subsection> : [<note>, <note>, ...],
+        <subsection> : [<note>, <note>, ...],
+        ...
+    }
+    '''
+    # define the dictionary
+    analyst_valuation = {}
+
+    # TO DO
+
+    return analyst_valuation
